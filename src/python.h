@@ -1,5 +1,5 @@
-#include <python2.6/Python.h>
-#include "python2.6/structmember.h"
+#include <python2.7/Python.h>
+#include "python2.7/structmember.h"
 
 #ifndef RPG_PYTHON
 #define RPG_PYTHON

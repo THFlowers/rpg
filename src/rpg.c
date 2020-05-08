@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
 
 #include "rpg.h"
@@ -119,12 +120,14 @@ int loadmap_Long(map_t* map, char* location)
 		}
 
 		map->resource[i] = SDL_DisplayFormat(temp);
+		//map->resource[i] = SDL_ConvertSurfaceFormat(temp, temp->format->format, 0);
 		if (map->resource[i] == NULL)
 		{
 			fprintf(stderr, "Unable to convert graphic: %s\n", SDL_GetError());
 			exit(1);
 		}
 
+		free(temp);
 		free(temp_str);
 	}
 
@@ -184,7 +187,7 @@ int  loadmap(map_t* map, char* name)
 	char temp_str[strlen(name)+strlen(map_dir)+1];
 	sprintf(temp_str, "%s%s", map_dir, name);
 	printf("%s\n", temp_str);
-	return loadmap(map, temp_str);
+	return loadmap_Long(map, temp_str);
 }
 
 int newmap(map_t* map, char* tileset, int width, int height)
@@ -225,11 +228,14 @@ int newmap(map_t* map, char* tileset, int width, int height)
 		exit(1);
 	}
 	map->resource[0] = SDL_DisplayFormat(temp);
+	//map->resource[0] = SDL_ConvertSurfaceFormat(temp, temp->format->format, 0);
 	if (map->resource[0] == NULL)
 	{
 		fprintf(stderr, "Unable to convert graphic: %s\n", SDL_GetError());
 		exit(1);
 	}
+
+	free(temp);
 
 	map->tiles = calloc(map->dim_x, sizeof(tile_t*));
 	if (map->tiles == NULL)

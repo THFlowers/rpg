@@ -1,5 +1,5 @@
-#include <python2.6/Python.h>
-#include "python2.6/structmember.h"
+#include <python2.7/Python.h>
+#include "python2.7/structmember.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +9,10 @@
 #include "rpg.h"
 #include "sprite.h"
 #include "python.h"
+
+#ifndef Py_TYPE
+#define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
+#endif
 
 map_t map;
 point_t camera;
@@ -32,8 +36,8 @@ static void
 rpg_SpriteObject_dealloc(rpg_SpriteObject* self)
 {
 	if (freeSprite(&self->sprite) < 0)
-		return NULL;
-	self->ob_type->tp_free((PyObject*)self);
+		return;
+	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static int
@@ -43,7 +47,7 @@ rpg_SpriteObject_init(rpg_SpriteObject* self, PyObject*args, PyObject *kwds)
 	int width  = TILE_SIZE;
 	int height = TILE_SIZE;
 
-	static *kwlist[] = {"path", "width", "height", NULL};
+	static char *kwlist[] = {"path", "width", "height", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|ii", kwlist, &path, &width, &height))
 		return -1;
@@ -82,8 +86,8 @@ rpg_SpriteObject_SetTile(rpg_SpriteObject* self, PyObject* args)
 	if (!PyArg_ParseTuple(args, "ii", &x, &y))
 		return NULL;
 	
-	if (&self->sprite==NULL)
-		return NULL;
+	//if (&self->sprite==NULL)
+		//return NULL;
 	
 	if (x < 0 || y < 0)
 	{
@@ -212,14 +216,50 @@ initrpg(void)
 	if (PyType_Ready(&rpg_SpriteType) < 0)
 		return;
 
+#if PY_MAJOR_VERSION >= 3
+	static struct PyModuleDef moduledef = {
+			PyModuleDef_HEAD_INIT,
+			"rpg", /* m_name */
+			"Embedded Module for RPG scripts",                /* m_doc */
+			-1,                  /* m_size */
+			rpgMethods,          /* m_methods */
+			NULL,                /* m_reload */
+			NULL,                /* m_traverse */
+			NULL,                /* m_clear */
+			NULL,                /* m_free */
+	};
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+	static struct PyModuleDef submoduledef = {
+			PyModuleDef_HEAD_INIT,
+			"rpg.constants", /* m_name */
+			"Constant value submodule for RPG scripts",                /* m_doc */
+			-1,                  /* m_size */
+			NULL,          /* m_methods */
+			NULL,                /* m_reload */
+			NULL,                /* m_traverse */
+			NULL,                /* m_clear */
+			NULL,                /* m_free */
+	};
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+	pModule = PyModule_Create(&moduledef);
+#else
 	pModule = Py_InitModule3("rpg", rpgMethods, "Embedded Module for RPG scripts");
+#endif
 	if (pModule == NULL)
 		return;
 
 	Py_INCREF(&rpg_SpriteType);
 	PyModule_AddObject(pModule, "Sprite", (PyObject *)&rpg_SpriteType);
 
+#if PY_MAJOR_VERSION >= 3
+	PyObject* constants = PyModule_Create(&moduledef);
+#else
 	PyObject* constants = Py_InitModule3("rpg.constants", NULL, "Constant value submodule for RPG scripts");
+#endif
 	if (constants == NULL)
 		return;
 

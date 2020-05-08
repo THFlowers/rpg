@@ -2,7 +2,7 @@ cc=gcc
 warnings= -ggdb -Wall -pedantic -Wextra -Waddress -Wimplicit -Wnested-externs
 sdl_libs=`sdl-config --libs` -lSDL_image -lSDL_ttf
 gtk_libs=`pkg-config --cflags --libs gtk+-2.0`
-python_libs=`python-config --ldflags`
+python_libs=`pkg-config --libs python2`
 
 .Phony: all clean
 all: rpg edit

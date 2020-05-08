@@ -10,17 +10,18 @@
 #include "textbox.h"
 #include "python.h"
 
-Uint8 dirty_screen = 1;
+//Uint8 fullscreen = SDL_FALSE;
+Uint8 dirty_screen = SDL_TRUE;
 map_t map;
 point_t camera;
 TTF_Font* font;
 
-void demomap(map_t* map);
+//void demomap(map_t* map);
 
 int
 main(int argc, char** argv)
 {
-	argc--; //Don't count (null) termination element
+	argc--; //Don't count 0th (our name) element
 	if (argc > 3)
 	{
 		fprintf(stderr, "Too many args! Usage: ./rpg [-s ./default.py] [./demo.map]");
@@ -61,6 +62,7 @@ main(int argc, char** argv)
 		return 10;
 	}
 	
+	//SDL_Window* window;
 	SDL_Surface* screen;
 
 	sprite_t user;
@@ -79,13 +81,32 @@ main(int argc, char** argv)
 	SDL_WM_SetCaption("RPG", "RPG");
 	SDL_WM_SetIcon(IMG_Load("media/icon_64.bmp"), NULL);
 
-	screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 0,
-		 SDL_DOUBLEBUF | SDL_ANYFORMAT);
+	screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 0, SDL_DOUBLEBUF | SDL_ANYFORMAT);
+	/*
+	window = SDL_CreateWindow("RPG",
+		SDL_WINDOWPOS_UNDEFINED,
+		SDL_WINDOWPOS_UNDEFINED,
+		SCREEN_WIDTH, SCREEN_HEIGHT,
+		0);
+	 */
+
 	if (screen == NULL)
 	{
-		fprintf(stderr, "Unable to set video mode: %s\n", SDL_GetError());
+		fprintf(stderr, "Unable to set create window: %s\n", SDL_GetError());
 		return 1;
 	}
+	/*
+	SDL_SetWindowIcon(window, IMG_Load("media/icon_64.bmp"));
+
+	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
+	if (renderer == NULL)
+	{
+		fprintf(stderr, "Unable to create renderer: %s\n", SDL_GetError());
+		return 1;
+	}
+	*/
+
+	//SDL_Surface* screen = SDL_GetWindowSurface(window);
 	SDL_SetClipRect(screen, NULL);
 
 	if (loadmap_Long(&map, map_name) != 0)
@@ -123,9 +144,9 @@ main(int argc, char** argv)
 	free(map_name);
 	free(py_name);
 
-	loadSprite("media/sprites/mnv2.bmp", &user, TILE_SIZE, TILE_SIZE);
-	if (&user==NULL)
+	if (loadSprite("media/sprites/mnv2.bmp", &user, TILE_SIZE, TILE_SIZE))
 		exit(1);
+
 	user.tile_x=2; user.tile_y=2;
 	user.animation=RIGHT;
 	user.screen_x= TILE_SIZE * user.tile_x;
@@ -134,9 +155,6 @@ main(int argc, char** argv)
 	user.ai=NULL;
 
 	/* Kept to archive C interface
-	loadSprite("media/sprites/wmg2.bmp", &npc, TILE_SIZE, TILE_SIZE);
-	if (&npc==NULL)
-		exit(1);
 	npc.tile_x=10; npc.tile_y=10;
 	npc.screen_x= TILE_SIZE  * npc.tile_x;
 	npc.screen_y= TILE_SIZE * npc.tile_y;
@@ -170,10 +188,20 @@ main(int argc, char** argv)
 							gameover=1;
 							break;
 						case SDLK_PRINT:
+						//case SDLK_PRINTSCREEN:
 							SDL_SaveBMP(screen, "screenshots/screenshot.bmp");
 							break;
 						case SDLK_F11:
 							SDL_WM_ToggleFullScreen(screen);
+							/*
+							if (!fullscreen)
+								SDL_SetWindowFullscreen(window, SDL_TRUE);
+							else
+								SDL_RestoreWindow(window);
+							// Needed?  I doubt but who knows
+							screen = SDL_GetWindowSurface(window);
+							fullscreen = !fullscreen;
+							 */
 							break;
 						case SDLK_RIGHT:
 						case SDLK_l:
@@ -244,6 +272,7 @@ main(int argc, char** argv)
 		drawTextBox(screen, &tb);
 
 		SDL_Flip(screen);
+		//SDL_RenderPresent(renderer);
 		SDL_Delay(50);
 	}
 	
@@ -271,7 +300,7 @@ void demomap(map_t* map)
 	map->resource = (SDL_Surface**)malloc(map->num_resources * sizeof(SDL_Surface*));
 	if (map->resource == NULL)
 	{
-		fprintf(stderr, "Malloc could not allocate %d bytes for map->resource.\n",
+		fprintf(stderr, "Malloc could not allocate %llu bytes for map->resource.\n",
 			map->num_resources * sizeof(SDL_Surface*));
 		exit(1);
 	}
@@ -295,7 +324,8 @@ void demomap(map_t* map)
 		fprintf(stderr, "Unable to load graphic: %s\n", SDL_GetError());
 		exit(1);
 	}
-	map->resource[0] = SDL_DisplayFormat(temp);
+	//map->resource[0] = SDL_DisplayFormat(temp);
+	map->resource[0] = SDL_ConvertSurfaceFormat(temp, temp->format->format, 0);
 	if (map->resource[0] == NULL)
 	{
 		fprintf(stderr, "Unable to convert graphic: %s\n", SDL_GetError());

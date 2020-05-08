@@ -1,3 +1,4 @@
+#include <string.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
 #include "rpg.h"
@@ -19,6 +20,7 @@ int renderTextBox(textbox_t* textbox)
 	SDL_Surface	*temp;
 	SDL_Rect	rect;
 	SDL_VideoInfo*	videoinfo;
+	//SDL_RendererInfo rendererInfo;
 	int color;
 	
 	int	length;
@@ -73,7 +75,7 @@ int renderTextBox(textbox_t* textbox)
 		}
 
 		// Line is start -> i; by copying i-start characters (Selected area start->i minus leading characters)
-		lines[line] = strndup(textbox->text+start, i-start);
+		lines[line] = strndup(textbox->text+start, i-start); //TODO: Doesn't work with non GNU / newer
 
 		// Get the width (w) of the current line, save it if over current maximum line width (width)
 		TTF_SizeText(font, lines[line], &w, NULL);
@@ -88,15 +90,21 @@ int renderTextBox(textbox_t* textbox)
 		}
 		line++;
 
-		// Begining of next line is current 'end'; the text was wrapped
+		// Beginning of next line is current 'end'; the text was wrapped
 		start = i;
 	}
 
 	videoinfo = SDL_GetVideoInfo();
+	//SDL_GetRenderDriverInfo(0, &rendererInfo); // TODO
 	lineskip = TTF_FontLineSkip(font);
 
 	height = (line+1) * (lineskip + height);
 
+	/*
+	Uint32 format = rendererInfo.texture_formats[0];
+	textbox->render = SDL_CreateRGBSurfaceWithFormat(SDL_SWSURFACE, width, height,
+													 SDL_BITSPERPIXEL(format), format);
+	 */
 	textbox->render = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height,
 		 videoinfo->vfmt->BitsPerPixel,
 		 videoinfo->vfmt->Rmask,
@@ -110,7 +118,7 @@ int renderTextBox(textbox_t* textbox)
 		return 1;
 	}
 
-	color = SDL_MapRGB(videoinfo->vfmt, white.r, white.g, white.b);
+	color = SDL_MapRGB(textbox->render->format, white.r, white.g, white.b);
 	SDL_FillRect(textbox->render, NULL, color);
 
 	printf("Number of lines: %i\n", line+1);

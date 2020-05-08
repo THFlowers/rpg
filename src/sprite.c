@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 
 #include "sprite.h"
 #include "rpg.h"
@@ -19,9 +20,12 @@ int loadSprite(char* path, sprite_t* sprite, int width, int height)
 		fprintf(stderr, "Unable to load sprite: %s\n", SDL_GetError());
 		return(1);
 	}
+	//SDL_SetColorKey(temp, SDL_RLEACCEL,
+	//				(Uint16) SDL_MapRGB(temp->format, 0, 0, 255));
 	SDL_SetColorKey(temp, SDL_SRCCOLORKEY | SDL_RLEACCEL,
 			(Uint16) SDL_MapRGB(temp->format, 0, 0, 255));
 	sprite->image=SDL_DisplayFormat(temp);
+	//sprite->image=SDL_ConvertSurfaceFormat(temp, temp->format->format, 0);
 	if (sprite->image == NULL)
 	{
 		fprintf(stderr, "Unable to convert bitmap: %s\n", SDL_GetError());
@@ -101,6 +105,8 @@ int freeSprite(sprite_t *sprite)
 	
 	npc_list_size--;
 	npc_list = realloc(npc_list, npc_list_size * sizeof(sprite_t*));
+
+	return 0;
 }
 
 void freeAllSprite(void)
@@ -108,7 +114,7 @@ void freeAllSprite(void)
 	if (npc_list_size <= 0)
 	{
 		fprintf(stderr, "Nothing to free, list is zero.");
-		return 1;
+		return;
 	}
 
 	sprite_t* sprite;
@@ -124,8 +130,8 @@ void freeAllSprite(void)
 			sprite->ai(sprite, CLEAR);
 
 		printf("%i\n", pos);
-		printf("Address of pointer: %x\n", sprite);
-		printf("Address of image:   %x\n", surf);
+		printf("Address of pointer: %p\n", sprite);
+		printf("Address of image:   %p\n", surf);
 
 		SDL_FreeSurface(surf);
 		npc_list[pos]=NULL;
@@ -156,7 +162,6 @@ void drawSprite(SDL_Surface* screen, sprite_t *sprite)
 int drawAllSprite(SDL_Surface* screen)
 {
 	sprite_t* sprite;
-	SDL_Surface* surf;
 	int ret = 0;
 
 	int pos;
@@ -312,7 +317,7 @@ void random_ai(void* sprite, Uint8 event)
 			else
 				seed = 25;
 			
-			switch (random()%seed)
+			switch (rand()%seed)
 			{
 				case UP:
 					npc->animation=UP;
